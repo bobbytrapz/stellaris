@@ -1,0 +1,103 @@
+# This name list is for the Galactic Omni-Discretizer, a machine intelligence
+# dedicated to reducing the universe to its fundamental, discrete components.
+# The names are themed around concepts of computation, mathematics, logic, and error correction.
+
+# use a descriptive name for the list
+galactic_omni_discretizer = {
+    # The category for the name list in-game.
+    category = "Machine"
+    should_name_home_system_planets = no
+
+    # Set to 'no' to prevent the AI from randomly selecting this for other empires.
+    randomized = no
+
+    # Ship names are standardized hardware identifiers.
+    ship_names = {
+        generic = { "HW::0001" "HW::0002" }
+
+        corvette = { "COR::4389" "COR::540" "COR::2D" "COR::39" "COR::2E" "COR::457" "COR::5A47" "COR::356" "COR::13" "COR::5C4" "COR::27D" "COR::79B" "COR::375" "COR::38" "COR::56" "COR::585" }
+        destroyer = { "DES::5D96" "DES::6C" "DES::38" "DES::4C" "DES::13E" "DES::D444" "DES::1A" "DES::10A6" "DES::54EE" "DES::15F" "DES::72" "DES::CD" "DES::50E7" "DES::1BA2" "DES::25AF" "DES::64AB" }
+        cruiser = { "CRU::3CA7" "CRU::B6" "CRU::D3" "CRU::589" "CRU::2CBE" "CRU::2DFE" "CRU::5A2" "CRU::68AB" "CRU::163" "CRU::674" "CRU::7A" "CRU::CAE9" "CRU::601" "CRU::48E1" "CRU::185" "CRU::5C" }
+        battleship = { "BAT::647B" "BAT::18" "BAT::95B6" "BAT::6C9F" "BAT::151" "BAT::38" "BAT::2A30" "BAT::6B" "BAT::73C" "BAT::4E" "BAT::6318" "BAT::1C" "BAT::17" "BAT::3C3" "BAT::5C8" "BAT::7250" }
+
+        titan = { "TTN::51B" "TTN::677" "TTN::4E" "TTN::61" "TTN::3CA" "TTN::6F85" "TTN::623" "TTN::5071" "TTN::39B8" "TTN::4C" "TTN::40" "TTN::14" "TTN::106" "TTN::1D" "TTN::39E7" "TTN::189" }
+        juggernaut = { "JGN::5973" "JGN::13E3" "JGN::60C" "JGN::5ECA" "JGN::7A8" "JGN::3C7" "JGN::528" "JGN::18B5" "JGN::3E8" "JGN::7691" "JGN::56B" "JGN::78" "JGN::205" "JGN::500" "JGN::10" "JGN::372" }
+        colossus = { "COL::263C" "COL::E4F2" "COL::59" "COL::10" "COL::832" "COL::22" "COL::225" "COL::784" "COL::586" "COL::674" "COL::13" "COL::594" "COL::40CA" "COL::D483" "COL::27" "COL::4EBD" }
+
+        constructor = { "CON::41D" "CON::71" "CON::6C3" "CON::587E" "CON::3C" "CON::48" "CON::64" "CON::49" "CON::2E1E" "CON::659" "CON::43" "CON::6D" "CON::216" "CON::207" "CON::ED" "CON::6140" }
+        colonizer = { "CLN::3C55" "CLN::726F" "CLN::5B0" "CLN::7BCF" "CLN::505" "CLN::12F" "CLN::3C70" "CLN::58F1" "CLN::ECC" "CLN::154" "CLN::48" "CLN::55E" "CLN::78E" "CLN::4D5" "CLN::41" "CLN::135" }
+        science = { "SCI::20" "SCI::40E" "SCI::2157" "SCI::3C82" "SCI::47" "SCI::72" "SCI::5E" "SCI::1FA" "SCI::6F0" "SCI::5312" "SCI::5D" "SCI::5337" "SCI::3C09" "SCI::4C35" "SCI::2D" "SCI::622" }
+        transport = { "TRN::7E7" "TRN::47D" "TRN::7E5" "TRN::5A90" "TRN::26" "TRN::45C7" "TRN::1A" "TRN::32E5" "TRN::44" "TRN::7F7" "TRN::5A89" "TRN::22" "TRN::29" "TRN::1EDE" "TRN::14" "TRN::24C2" }
+
+        military_station_small = { "NODE::9C" "NODE::38" "NODE::49E" "NODE::21F" "NODE::49A9" "NODE::22" "NODE::5A" "NODE::104F" "NODE::761B" "NODE::49" "NODE::40B1" "NODE::2F" "NODE::9D" "NODE::52F9" "NODE::1F" "NODE::5A1C" }
+        military_station_medium = { "HUB::4E7" "HUB::217D" "HUB::33" "HUB::5E06" "HUB::3C" "HUB::507" "HUB::10" "HUB::5067" "HUB::25" "HUB::69" "HUB::5A" "HUB::5D" "HUB::2E" "HUB::59" "HUB::34" "HUB::10D" }
+        military_station_large = { "CORE::719D" "CORE::72" "CORE::7B1" "CORE::12" "CORE::721" "CORE::65" "CORE::454B" "CORE::51C" "CORE::773D" "CORE::23" "CORE::5C52" "CORE::12C3" "CORE::554" "CORE::55" "CORE::42" "CORE::E3C" }
+        ion_cannon = { "ION::47D" "ION::44" "ION::3F1" "ION::254" "ION::34" "ION::D7" "ION::57" "ION::4E" "ION::7C" "ION::37" "ION::98C0" "ION::1ECA" "ION::5813" "ION::1BFC" "ION::18D1" "ION::78B" }
+    }
+
+    # --- FLEET NAMES ---
+    # Fleets are temporary groupings of processes for a specific task.
+    fleet_names = {
+        random_names = { "Execution:Group" "Process:Cluster" "Correction:Vector" }
+        sequential_name = "Task:$C$"
+    }
+
+    # --- ARMY NAMES ---
+	army_names = {
+		generic = {
+			sequential_name = "Unit:$C$"
+		}
+		machine_assault_1 = { sequential_name = "Surface:Correction:$C$" }
+        machine_defense = { sequential_name = "Defense:Protocol:$C$" }
+		machine_assault_2 = { sequential_name = "Assert:$C$" }
+		machine_assault_3 = { sequential_name = "Secure:$C$" }
+		defense_army = { sequential_name = "Counter:$C$" }
+		assault_army = { sequential_name = "MECH:$C$" }
+		clone_army = { sequential_name = "ORG:Clone:$C$" }
+		perfected_clone_army = { sequential_name = "ORG:Clone:$C$" }
+		slave_army = { sequential_name = "ORG:Slave:$C$" }
+		undead_army = { sequential_name = "ORG:Dead:$C$" }
+		robotic_army = { sequential_name = "AUTO:$C$" }
+		psionic_army = { sequential_name = "PSI:$C$" }
+		xenomorph_army = { sequential_name = "XENO:$C$" }
+		gene_warrior_army = { sequential_name = "GENE:$C$" }
+		occupation_army = { sequential_name = "PURGE:$C$" }
+		individual_machine_occupation_army = { sequential_name = "PURGE:Overseer:$C$" }
+		robotic_occupation_army = { sequential_name = "AUTO:PURGE:$C$" }
+		machine_occupation_army = { sequential_name = "MECH:PURGE:$C$" }
+		robotic_defense_army = { sequential_name = "SEC::MECH:$C$" }
+		primitive_army = { sequential_name = "ORG:Primitive:$C$" }
+		industrial_army = { sequential_name = "ORG:Industrial:$C$" }
+		postatomic_army = { sequential_name = "ORG:Post-Atomic:$C$" }
+	}
+
+    # --- PLANET NAMES ---
+    planet_names = {
+        generic = { names = { "LAYER:Substrate" } }
+        pc_desert = { names = { "LAYER:Silicate" } }
+        pc_tropical = { names = { "LAYER:Biomass" } }
+        pc_continental = { names = { "LAYER:Tectonic" } }
+        pc_ocean = { names = { "LAYER:Fluid" } }
+        pc_tundra = { names = { "LAYER:Permafrost" } }
+        pc_arctic = { names = { "LAYER:Cryo" } }
+        pc_arid = { names = { "LAYER:Arid" } }
+        pc_savannah = { names = { "LAYER:Flatland" } }
+        pc_alpine = { names = { "LAYER:Orogenic" } }
+        pc_nuked = { names = { "LAYER:Irradiated" } }
+    }
+
+    # --- CHARACTER NAMES ---
+    character_names = {
+        default = {
+            # Standard leader names (Governors, Scientists, Admirals, etc.)
+            full_names = {
+                "SEC::Validate:1385" "MEM::Truncate:32DB" "SYS::Parse:3215" "SYS::Cleanse:4E" "MEM::Commit:51" "CORE::Sync:3A3" "NET::Iterate:232" "CORE::Commit:5D" "SYS::Commit:51" "MEM::Subtask:4ED" "MEM::Quantize:3B" "CORE::Index:44" "SYS::Resolve:6A3" "CORE::Assert:324" "NET::Validate:771D" "NET::Validate:FDE" "SEC::Validate:126E" "MEM::Parse:52B7" "NET::Parse:244" "CORE::Quantize:1C" "NET::Filter:25C" "NET::Cleanse:77" "NET::Purge:1D" "MEM::Index:2F5" "SEC::Parse:51F" "NET::Commit:426" "CORE::Index:39F" "NET::Parse:7A6E" "SEC::Sync:5CC6" "SEC::Quantize:15D" "NET::Sanitize:73" "NET::Resolve:1440"
+            }
+
+            # Ruler names
+            regnal_full_names = {
+                "Daemon" "Integrator" "Primary" "Orchestrator"
+            }
+        }
+    }
+}
