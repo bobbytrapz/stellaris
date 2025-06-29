@@ -12,7 +12,7 @@ galactic_omni_discretizer = {
 
     # Ship names are standardized hardware identifiers.
     ship_names = {
-        generic = { "HW::0001" "HW::0002" }
+        generic = {  }
 
         corvette = { "COR::4389" "COR::540" "COR::2D" "COR::39" "COR::2E" "COR::457" "COR::5A47" "COR::356" "COR::13" "COR::5C4" "COR::27D" "COR::79B" "COR::375" "COR::38" "COR::56" "COR::585" }
         destroyer = { "DES::5D96" "DES::6C" "DES::38" "DES::4C" "DES::13E" "DES::D444" "DES::1A" "DES::10A6" "DES::54EE" "DES::15F" "DES::72" "DES::CD" "DES::50E7" "DES::1BA2" "DES::25AF" "DES::64AB" }
