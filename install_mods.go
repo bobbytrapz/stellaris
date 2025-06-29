@@ -103,10 +103,6 @@ type Mod struct {
 	Files []string
 }
 
-func removeDirectory(path string) error {
-	return os.RemoveAll(path)
-}
-
 func copyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
