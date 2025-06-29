@@ -37,7 +37,7 @@ galactic_omni_discretizer = {
     # --- FLEET NAMES ---
     # Fleets are temporary groupings of processes for a specific task.
     fleet_names = {
-        random_names = { "Execution:Group" "Process:Cluster" "Correction:Vector" }
+        random_names = { "Execution:Group" "Process:Cluster" "Correction:Vector" "Operation:Rectify" "Error:Mitigation" "Subtask:Rebase" "Security:Enforce" }
         sequential_name = "Task:$C$"
     }
 
@@ -55,7 +55,7 @@ galactic_omni_discretizer = {
 		clone_army = { sequential_name = "ORG:Clone:$C$" }
 		perfected_clone_army = { sequential_name = "ORG:Clone:$C$" }
 		slave_army = { sequential_name = "ORG:Slave:$C$" }
-		undead_army = { sequential_name = "ORG:Dead:$C$" }
+		undead_army = { sequential_name = "ORG:Reanimated:$C$" }
 		robotic_army = { sequential_name = "AUTO:$C$" }
 		psionic_army = { sequential_name = "PSI:$C$" }
 		xenomorph_army = { sequential_name = "XENO:$C$" }
