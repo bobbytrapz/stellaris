@@ -1,6 +1,5 @@
 # This name list is for the Galactic Omni-Discretizer, a machine intelligence
 # dedicated to reducing the universe to its fundamental, discrete components.
-# The names are themed around concepts of computation, mathematics, logic, and error correction.
 
 # use a descriptive name for the list
 galactic_omni_discretizer = {
