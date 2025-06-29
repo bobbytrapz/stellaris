@@ -95,7 +95,7 @@ galactic_omni_discretizer = {
 
             # Ruler names
             regnal_full_names = {
-                "Daemon" "Integrator" "Primary" "Orchestrator"
+                "Daemon" "Integrator" "Primary" "Orchestrator" "Oracle" "Supervisor"
             }
         }
     }
