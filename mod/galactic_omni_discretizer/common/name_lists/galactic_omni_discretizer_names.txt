@@ -38,36 +38,36 @@ galactic_omni_discretizer = {
     # Fleets are temporary groupings of processes for a specific task.
     fleet_names = {
         random_names = { "Execution:Group" "Process:Cluster" "Correction:Vector" "Operation:Rectify" "Error:Mitigation" "Subtask:Rebase" "Security:Enforce" }
-        sequential_name = "Task:$C$"
+        sequential_name = GOD_FLEET_NAMES
     }
 
     # --- ARMY NAMES ---
 	army_names = {
 		generic = {
-			sequential_name = "Unit $C$"
+			sequential_name = GOD_UNIT_NAMES
 		}
-		machine_assault_1 = { sequential_name = "Surface:Correction $C$" }
-        machine_defense = { sequential_name = "Defense:Protocol $C$" }
-		machine_assault_2 = { sequential_name = "Assert $C$" }
-		machine_assault_3 = { sequential_name = "Secure $C$" }
-		defense_army = { sequential_name = "Counter $C$" }
-		assault_army = { sequential_name = "MECH $C$" }
-		clone_army = { sequential_name = "ORG:Clone $C$" }
-		perfected_clone_army = { sequential_name = "ORG:Clone $C$" }
-		slave_army = { sequential_name = "ORG:Slave $C$" }
-		undead_army = { sequential_name = "ORG:Reanimated $C$" }
-		robotic_army = { sequential_name = "AUTO $C$" }
-		psionic_army = { sequential_name = "PSI $C$" }
-		xenomorph_army = { sequential_name = "XENO $C$" }
-		gene_warrior_army = { sequential_name = "GENE $C$" }
-		occupation_army = { sequential_name = "PURGE $C$" }
-		individual_machine_occupation_army = { sequential_name = "PURGE:Overseer $C$" }
-		robotic_occupation_army = { sequential_name = "AUTO:PURGE $C$" }
-		machine_occupation_army = { sequential_name = "MECH:PURGE $C$" }
-		robotic_defense_army = { sequential_name = "SEC::MECH $C$" }
-		primitive_army = { sequential_name = "ORG:Primitive $C$" }
-		industrial_army = { sequential_name = "ORG:Industrial $C$" }
-		postatomic_army = { sequential_name = "ORG:Post-Atomic $C$" }
+		machine_assault_1 = { sequential_name = GOD_ARMY_ASSAULT1 }
+        machine_defense = { sequential_name = GOD_ARMY_DEFENSE }
+		machine_assault_2 = { sequential_name = GOD_ARMY_ASSAULT2 }
+		machine_assault_3 = { sequential_name = GOD_ARMY_ASSAULT3 }
+		defense_army = { sequential_name = GOD_ARMY_DEFENSE }
+		assault_army = { sequential_name = GOD_ARMY_ASSAULT }
+		clone_army = { sequential_name = GOD_ARMY_CLONE }
+		perfected_clone_army = { sequential_name = GOD_ARMY_PERFECTED_CLONE }
+		slave_army = { sequential_name = GOD_ARMY_SLAVE }
+		undead_army = { sequential_name = GOD_ARMY_UNDEAD }
+		robotic_army = { sequential_name = GOD_ARMY_ROBOTIC }
+		psionic_army = { sequential_name = GOD_ARMY_PSIONIC }
+		xenomorph_army = { sequential_name = GOD_ARMY_XENOMORPH }
+		gene_warrior_army = { sequential_name = GOD_ARMY_GENE_WARRIOR }
+		occupation_army = { sequential_name = GOD_ARMY_OCCUPATION }
+		individual_machine_occupation_army = { sequential_name = GOD_ARMY_INDIVIDUAL_MACHINE_OCCUPATION }
+		robotic_occupation_army = { sequential_name = GOD_ARMY_ROBOTIC_OCCUPATION }
+		machine_occupation_army = { sequential_name = GOD_ARMY_MACHINE_OCCUPATION }
+		robotic_defense_army = { sequential_name = GOD_ARMY_ROBOTIC_DEFENSE }
+		primitive_army = { sequential_name = GOD_ARMY_PRIMITIVE }
+		industrial_army = { sequential_name = GOD_ARMY_INDUSTRIAL }
+		postatomic_army = { sequential_name = GOD_ARMY_POSTATOMIC }
 	}
 
     # --- PLANET NAMES ---
