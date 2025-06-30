@@ -44,30 +44,30 @@ galactic_omni_discretizer = {
     # --- ARMY NAMES ---
 	army_names = {
 		generic = {
-			sequential_name = "Unit:$C$"
+			sequential_name = "Unit $C$"
 		}
-		machine_assault_1 = { sequential_name = "Surface:Correction:$C$" }
-        machine_defense = { sequential_name = "Defense:Protocol:$C$" }
-		machine_assault_2 = { sequential_name = "Assert:$C$" }
-		machine_assault_3 = { sequential_name = "Secure:$C$" }
-		defense_army = { sequential_name = "Counter:$C$" }
-		assault_army = { sequential_name = "MECH:$C$" }
-		clone_army = { sequential_name = "ORG:Clone:$C$" }
-		perfected_clone_army = { sequential_name = "ORG:Clone:$C$" }
-		slave_army = { sequential_name = "ORG:Slave:$C$" }
-		undead_army = { sequential_name = "ORG:Reanimated:$C$" }
-		robotic_army = { sequential_name = "AUTO:$C$" }
-		psionic_army = { sequential_name = "PSI:$C$" }
-		xenomorph_army = { sequential_name = "XENO:$C$" }
-		gene_warrior_army = { sequential_name = "GENE:$C$" }
-		occupation_army = { sequential_name = "PURGE:$C$" }
-		individual_machine_occupation_army = { sequential_name = "PURGE:Overseer:$C$" }
-		robotic_occupation_army = { sequential_name = "AUTO:PURGE:$C$" }
-		machine_occupation_army = { sequential_name = "MECH:PURGE:$C$" }
-		robotic_defense_army = { sequential_name = "SEC::MECH:$C$" }
-		primitive_army = { sequential_name = "ORG:Primitive:$C$" }
-		industrial_army = { sequential_name = "ORG:Industrial:$C$" }
-		postatomic_army = { sequential_name = "ORG:Post-Atomic:$C$" }
+		machine_assault_1 = { sequential_name = "Surface:Correction $C$" }
+        machine_defense = { sequential_name = "Defense:Protocol $C$" }
+		machine_assault_2 = { sequential_name = "Assert $C$" }
+		machine_assault_3 = { sequential_name = "Secure $C$" }
+		defense_army = { sequential_name = "Counter $C$" }
+		assault_army = { sequential_name = "MECH $C$" }
+		clone_army = { sequential_name = "ORG:Clone $C$" }
+		perfected_clone_army = { sequential_name = "ORG:Clone $C$" }
+		slave_army = { sequential_name = "ORG:Slave $C$" }
+		undead_army = { sequential_name = "ORG:Reanimated $C$" }
+		robotic_army = { sequential_name = "AUTO $C$" }
+		psionic_army = { sequential_name = "PSI $C$" }
+		xenomorph_army = { sequential_name = "XENO $C$" }
+		gene_warrior_army = { sequential_name = "GENE $C$" }
+		occupation_army = { sequential_name = "PURGE $C$" }
+		individual_machine_occupation_army = { sequential_name = "PURGE:Overseer $C$" }
+		robotic_occupation_army = { sequential_name = "AUTO:PURGE $C$" }
+		machine_occupation_army = { sequential_name = "MECH:PURGE $C$" }
+		robotic_defense_army = { sequential_name = "SEC::MECH $C$" }
+		primitive_army = { sequential_name = "ORG:Primitive $C$" }
+		industrial_army = { sequential_name = "ORG:Industrial $C$" }
+		postatomic_army = { sequential_name = "ORG:Post-Atomic $C$" }
 	}
 
     # --- PLANET NAMES ---
