@@ -3,5 +3,5 @@ tags = {
     "Gameplay"
 }
 name = "Galactic Omni-Discretizer"
-supported_version = "v4.0.*"
+supported_version = "v4.4.*"
 path = "/home/bobby/.local/share/Paradox Interactive/Stellaris/mod/galactic_omni_discretizer"

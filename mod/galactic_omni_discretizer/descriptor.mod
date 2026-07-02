@@ -3,4 +3,4 @@ tags = {
     "Gameplay"
 }
 name = "Galactic Omni-Discretizer"
-supported_version = "v4.0.*"
+supported_version = "v4.4.*"
