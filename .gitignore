@@ -1,0 +1,8 @@
+# Binaries
+create_portrait_mod
+portrait_gallery_generator
+install_mods
+
+# Mod output
+mod/the_tesseractic_vault_portrait*
+portrait_gallery/
