@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellaris Namelist Editor V2</title>
+    <!-- Alpine Plugins -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0B0E14; color: #E2E8F0; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glowing-border:focus-within { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+        
+        /* Custom scrollbar for inner lists */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        stellar: { dark: '#0B0E14', card: '#1E293B', accent: '#38bdf8' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen flex overflow-hidden font-sans antialiased" x-data="app()">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 glass-panel border-r border-slate-700/50 flex flex-col z-20">
+        <div class="p-6">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Namelist Forge</h1>
+            <p class="text-xs text-slate-400 mt-1">Stellaris Modding Tool</p>
+        </div>
+        <nav class="flex-1 px-4 space-y-2 overflow-y-auto scrollbar-hide">
+            <template x-for="tab in tabs">
+                <button @click="switchTab(tab.id)" 
+                    :class="currentTab === tab.id ? 'bg-sky-500/20 text-sky-400 border-sky-500/50 shadow-inner' : 'text-slate-400 hover:bg-slate-800 border-transparent hover:text-slate-200'"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group">
+                    <i :data-lucide="tab.icon" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                    <span x-text="tab.label" class="font-medium"></span>
+                </button>
+            </template>
+        </nav>
+        <div class="p-4 mt-auto">
+            <button @click="save()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all flex justify-center items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span x-text="saving ? 'Saving...' : 'Save TSV'"></span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
+        <div class="max-w-5xl mx-auto pb-24">
+            <!-- Toast Notifications -->
+            <div x-show="toast.show" x-transition class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border" :class="toast.type === 'success' ? 'bg-slate-800 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-red-500 text-red-400'">
+                <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-5 h-5"></i>
+                <span x-text="toast.msg" class="font-medium text-slate-200"></span>
+            </div>
+
+            <!-- Meta Tab -->
+            <section x-show="currentTab === 'meta'" x-transition.opacity.duration.300ms>
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Metadata</h2>
+                    <p class="text-slate-400">Configure the core identity of your namelist mod.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Internal Mod ID (No spaces)</label>
+                        <input type="text" x-model="data.id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. my_custom_namelist">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Display Name</label>
+                        <input type="text" x-model="data.name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. My Custom Namelist">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">UI Category</label>
+                        <select x-model="data.category" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none appearance-none">
+                            <option value="Humanoid">Humanoid</option>
+                            <option value="Machine">Machine</option>
+                            <option value="Plantoid">Plantoid</option>
+                            <option value="Lithoid">Lithoid</option>
+                            <option value="Necroid">Necroid</option>
+                            <option value="Aquatic">Aquatic</option>
+                            <option value="Toxoid">Toxoid</option>
+                            <option value="Avian">Avian</option>
+                            <option value="Mammalian">Mammalian</option>
+                            <option value="Molluscoid">Molluscoid</option>
+                            <option value="Reptilian">Reptilian</option>
+                            <option value="Arthropoid">Arthropoid</option>
+                            <option value="Fungoid">Fungoid</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ships Tab -->
+            <section x-show="currentTab === 'ships'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Ship Classes</h2>
+                    <p class="text-slate-400">Manage names for specific hulls and stations.</p>
+                </div>
+
+                <div class="space-y-8">
+                    <template x-for="(group, gIdx) in groupedShips" :key="group.group">
+                        <div>
+                            <h4 class="text-sm font-bold text-sky-400 uppercase tracking-widest mb-4" x-text="group.group"></h4>
+                            <div class="space-y-4">
+                                <template x-for="(ship, index) in group.classes" :key="ship.key">
+                                    <div class="glass-panel rounded-2xl overflow-hidden shadow-lg shadow-black/20 transition-all">
+                                        <div class="bg-slate-800/80 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-colors" @click="ship.expanded = !ship.expanded">
+                                            <div class="flex items-center gap-4">
+                                                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="ship.expanded ? '' : '-rotate-90'"></i>
+                                                <div class="p-2 bg-slate-700/50 rounded-lg text-sky-400 border border-slate-600/50"><i :data-lucide="ship.icon" class="w-5 h-5"></i></div>
+                                                <h3 class="font-bold text-lg text-white" x-text="ship.label"></h3>
+                                                <span class="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded-md" x-text="ship.key"></span>
+                                                <span class="text-xs font-semibold text-sky-400 bg-sky-900/30 px-2.5 py-1 rounded-full ml-2 border border-sky-500/20" x-text="ship.names.length + ' names'"></span>
+                                            </div>
+                                        </div>
+                                        <div x-show="ship.expanded" x-collapse>
+                                            <div class="p-6 bg-slate-900/40 border-t border-slate-700/50">
+                                                <div class="flex justify-between items-center mb-4">
+                                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Name List</h4>
+                                                    <div class="flex gap-3">
+                                                        <button @click="importToCategory('ships', ship)" class="text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-4 h-4"></i> Import</button>
+                                                        <button @click="addNameToCategory(ship)" class="text-sm font-medium text-sky-100 bg-sky-600 hover:bg-sky-500 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-sky-500/20"><i data-lucide="plus" class="w-4 h-4"></i> Add Name</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div x-show="ship.names.length === 0" class="flex flex-col items-center justify-center py-10 px-4 bg-slate-900/30 border border-dashed border-slate-700/50 rounded-xl">
+                                                    <div class="p-3 bg-slate-800/50 rounded-full mb-3 text-slate-500"><i data-lucide="ghost" class="w-6 h-6"></i></div>
+                                                    <p class="text-sm font-medium text-slate-400 mb-1">No names in this list</p>
+                                                    <p class="text-xs text-slate-500 mb-4 text-center max-w-xs">You can add names manually or import a comma-separated list.</p>
+                                                    <button @click="importToCategory('ships', ship)" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-3 h-3"></i> Quick Import</button>
+                                                </div>
+
+                                                <div x-show="ship.names.length > 0" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                    <template x-for="(nameObj, nIdx) in ship.names" :key="nameObj.id">
+                                                        <div class="flex items-center gap-2 group">
+                                                            <input type="text" x-model="nameObj.val" @input="debouncedUpdate('ships', ship.key)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 glowing-border focus:outline-none transition-all text-sm font-mono shadow-inner" placeholder="Enter name...">
+                                                            <button @click="ship.names.splice(nIdx, 1); debouncedUpdate('ships', ship.key)" class="text-slate-500 hover:text-red-400 p-2 opacity-50 group-hover:opacity-100 transition-opacity bg-slate-800 hover:bg-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Planets Tab -->
+            <section x-show="currentTab === 'planets'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Planets</h2>
+                    <p class="text-slate-400">Manage names by planet climate.</p>
+                </div>
+
+                <div class="space-y-8">
+                    <template x-for="(group, gIdx) in groupedPlanets" :key="group.group">
+                        <div>
+                            <h4 class="text-sm font-bold text-emerald-400 uppercase tracking-widest mb-4" x-text="group.group"></h4>
+                            <div class="space-y-4">
+                                <template x-for="(ship, index) in group.classes" :key="ship.key">
+                                    <div class="glass-panel rounded-2xl overflow-hidden shadow-lg shadow-black/20 transition-all">
+                                        <div class="bg-slate-800/80 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-colors" @click="ship.expanded = !ship.expanded">
+                                            <div class="flex items-center gap-4">
+                                                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="ship.expanded ? '' : '-rotate-90'"></i>
+                                                <div class="p-2 bg-slate-700/50 rounded-lg text-emerald-400 border border-slate-600/50"><i :data-lucide="ship.icon" class="w-5 h-5"></i></div>
+                                                <h3 class="font-bold text-lg text-white" x-text="ship.label"></h3>
+                                                <span class="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded-md" x-text="ship.key"></span>
+                                                <span class="text-xs font-semibold text-emerald-400 bg-emerald-900/30 px-2.5 py-1 rounded-full ml-2 border border-emerald-500/20" x-text="ship.names.length + ' names'"></span>
+                                            </div>
+                                        </div>
+                                        <div x-show="ship.expanded" x-collapse>
+                                            <div class="p-6 bg-slate-900/40 border-t border-slate-700/50">
+                                                <div class="flex justify-between items-center mb-4">
+                                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Name List</h4>
+                                                    <div class="flex gap-3">
+                                                        <button @click="importToCategory('planets', ship)" class="text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-4 h-4"></i> Import</button>
+                                                        <button @click="addNameToCategory(ship)" class="text-sm font-medium text-emerald-100 bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"><i data-lucide="plus" class="w-4 h-4"></i> Add Name</button>
+                                                    </div>
+                                                </div>
+
+                                                <div x-show="ship.names.length === 0" class="flex flex-col items-center justify-center py-10 px-4 bg-slate-900/30 border border-dashed border-slate-700/50 rounded-xl">
+                                                    <div class="p-3 bg-slate-800/50 rounded-full mb-3 text-slate-500"><i data-lucide="ghost" class="w-6 h-6"></i></div>
+                                                    <p class="text-sm font-medium text-slate-400 mb-1">No names in this list</p>
+                                                    <p class="text-xs text-slate-500 mb-4 text-center max-w-xs">You can add names manually or import a comma-separated list.</p>
+                                                    <button @click="importToCategory('planets', ship)" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-3 h-3"></i> Quick Import</button>
+                                                </div>
+
+                                                <div x-show="ship.names.length > 0" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                    <template x-for="(nameObj, nIdx) in ship.names" :key="nameObj.id">
+                                                        <div class="flex items-center gap-2 group">
+                                                            <input type="text" x-model="nameObj.val" @input="debouncedUpdate('planets', ship.key)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 glowing-border focus:outline-none transition-all text-sm font-mono shadow-inner" placeholder="Enter name...">
+                                                            <button @click="ship.names.splice(nIdx, 1); debouncedUpdate('planets', ship.key)" class="text-slate-500 hover:text-red-400 p-2 opacity-50 group-hover:opacity-100 transition-opacity bg-slate-800 hover:bg-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Armies Tab -->
+            <section x-show="currentTab === 'armies'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Armies</h2>
+                    <p class="text-slate-400">Set sequential formats for ground forces.</p>
+                </div>
+                
+                <div class="space-y-8">
+                    <template x-for="(group, gIdx) in availableArmyTypes" :key="group.group">
+                        <div>
+                            <h4 class="text-sm font-bold text-sky-400 uppercase tracking-widest mb-4" x-text="group.group"></h4>
+                            <div class="space-y-4">
+                                <template x-for="(army, index) in group.classes" :key="army.key">
+                                    <div class="glass-panel rounded-2xl overflow-hidden shadow-lg shadow-black/20 transition-all">
+                                        <div class="bg-slate-800/80 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-colors" @click="army.expanded = !army.expanded">
+                                            <div class="flex items-center gap-4">
+                                                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="army.expanded ? '' : '-rotate-90'"></i>
+                                                <div class="p-2 bg-slate-700/50 rounded-lg text-sky-400 border border-slate-600/50"><i :data-lucide="army.icon" class="w-5 h-5"></i></div>
+                                                <h3 class="font-bold text-lg text-white" x-text="army.label"></h3>
+                                                <span class="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded-md" x-text="army.key"></span>
+                                            </div>
+                                        </div>
+                                        <div x-show="army.expanded" x-collapse>
+                                            <div class="p-6 bg-slate-900/40 border-t border-slate-700/50">
+                                                <div class="flex gap-4">
+                                                    <div class="flex-[1] flex flex-col gap-1">
+                                                        <span class="text-xs text-slate-500">Internal Key</span>
+                                                        <input type="text" x-model="data.armySeq[army.key]" placeholder="e.g. ARMY_KEY" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-slate-400 font-mono text-sm">
+                                                    </div>
+                                                    <div class="flex-[2] flex flex-col gap-1">
+                                                        <span class="text-xs text-slate-500">Display Format (Localisation)</span>
+                                                        <input type="text" :value="data.armySeq[army.key] ? (data.localisation[data.armySeq[army.key]] || '') : ''" @input="if(data.armySeq[army.key]) { data.localisation[data.armySeq[army.key]] = $event.target.value; }" placeholder="e.g. Squad $C$" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white font-mono text-sm glowing-border">
+                                                    </div>
+                                                </div>
+                                                <div class="flex gap-2 flex-wrap mt-3">
+                                                    <button @click="if(data.armySeq[army.key]) insertVariable('localisation', data.armySeq[army.key], '%O%')" class="px-3 py-1 bg-indigo-900/30 hover:bg-indigo-800 text-indigo-400 rounded text-[10px] font-semibold border border-indigo-700/30 transition-colors">[Ordinal] (1st)</button>
+                                                    <button @click="if(data.armySeq[army.key]) insertVariable('localisation', data.armySeq[army.key], '%R%')" class="px-3 py-1 bg-indigo-900/30 hover:bg-indigo-800 text-indigo-400 rounded text-[10px] font-semibold border border-indigo-700/30 transition-colors">[Roman] (I)</button>
+                                                    <button @click="if(data.armySeq[army.key]) insertVariable('localisation', data.armySeq[army.key], '$C$')" class="px-3 py-1 bg-indigo-900/30 hover:bg-indigo-800 text-indigo-400 rounded text-[10px] font-semibold border border-indigo-700/30 transition-colors">[Cardinal] (1)</button>
+                                                </div>
+                                                <div x-show="data.armySeq[army.key]" class="text-xs font-mono text-slate-500 mt-4 bg-slate-900/50 p-3 rounded-lg border border-slate-800 flex flex-col gap-1">
+                                                    <span class="uppercase tracking-wider text-[10px] text-slate-600 font-bold mb-1">Live Preview</span>
+                                                    <div>
+                                                        <span class="text-slate-300" x-text="previewName(data.localisation[data.armySeq[army.key]] || data.armySeq[army.key], 1)"></span>, 
+                                                        <span class="text-slate-300" x-text="previewName(data.localisation[data.armySeq[army.key]] || data.armySeq[army.key], 2)"></span>,
+                                                        <span class="text-slate-300" x-text="previewName(data.localisation[data.armySeq[army.key]] || data.armySeq[army.key], 3)"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Fleets Tab -->
+            <section x-show="currentTab === 'fleets'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Fleets</h2>
+                    <p class="text-slate-400">Design sequential fleet name formats and optional random names.</p>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Sequential Block -->
+                    <div class="glass-panel rounded-3xl p-8 space-y-6">
+                        <div class="space-y-4">
+                            <label class="text-sm font-semibold text-slate-300">Fleet Sequential Format (fleet_sequential_name)</label>
+                            <div class="flex gap-4">
+                                <div class="flex-[1] flex flex-col gap-1">
+                                    <span class="text-xs text-slate-500">Internal Key</span>
+                                    <input type="text" x-model="data.fleetSeq['sequential_name']" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-slate-400 font-mono text-sm" placeholder="e.g. FLEET_KEY">
+                                </div>
+                                <div class="flex-[2] flex flex-col gap-1">
+                                    <span class="text-xs text-slate-500">Display Format (Localisation)</span>
+                                    <input type="text" :value="data.fleetSeq['sequential_name'] ? (data.localisation[data.fleetSeq['sequential_name']] || '') : ''" @input="if(data.fleetSeq['sequential_name']) { data.localisation[data.fleetSeq['sequential_name']] = $event.target.value; }" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white font-mono text-sm glowing-border" placeholder="e.g. Strike Force %O%">
+                                </div>
+                            </div>
+                            <div class="flex gap-2 flex-wrap">
+                                <button @click="if(data.fleetSeq['sequential_name']) insertVariable('localisation', data.fleetSeq['sequential_name'], '%O%')" class="px-3 py-1.5 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 rounded-lg text-xs font-semibold border border-indigo-700/50 transition-colors">[Ordinal] (1st, 2nd...)</button>
+                                <button @click="if(data.fleetSeq['sequential_name']) insertVariable('localisation', data.fleetSeq['sequential_name'], '%R%')" class="px-3 py-1.5 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 rounded-lg text-xs font-semibold border border-indigo-700/50 transition-colors">[Roman] (I, II...)</button>
+                                <button @click="if(data.fleetSeq['sequential_name']) insertVariable('localisation', data.fleetSeq['sequential_name'], '$C$')" class="px-3 py-1.5 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 rounded-lg text-xs font-semibold border border-indigo-700/50 transition-colors">[Cardinal] (1, 2...)</button>
+                            </div>
+                            <div class="pt-4 border-t border-slate-700/50">
+                                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Live Preview</h4>
+                                <div class="flex flex-col gap-2 font-mono text-sm" x-show="data.fleetSeq['sequential_name']">
+                                    <div class="px-4 py-2 bg-slate-900/50 rounded-lg text-slate-300 border border-slate-800 flex items-center gap-3"><span class="text-slate-600">1</span> <span x-text="previewName(data.localisation[data.fleetSeq['sequential_name']] || data.fleetSeq['sequential_name'], 1)"></span></div>
+                                    <div class="px-4 py-2 bg-slate-900/50 rounded-lg text-slate-300 border border-slate-800 flex items-center gap-3"><span class="text-slate-600">2</span> <span x-text="previewName(data.localisation[data.fleetSeq['sequential_name']] || data.fleetSeq['sequential_name'], 2)"></span></div>
+                                    <div class="px-4 py-2 bg-slate-900/50 rounded-lg text-slate-300 border border-slate-800 flex items-center gap-3"><span class="text-slate-600">3</span> <span x-text="previewName(data.localisation[data.fleetSeq['sequential_name']] || data.fleetSeq['sequential_name'], 3)"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Random Block -->
+                    <div class="glass-panel rounded-2xl overflow-hidden shadow-lg shadow-black/20 transition-all">
+                        <div class="bg-slate-800/80 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-colors" @click="activeFleetRandom.expanded = !activeFleetRandom.expanded">
+                            <div class="flex items-center gap-4">
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="activeFleetRandom.expanded ? '' : '-rotate-90'"></i>
+                                <div class="p-2 bg-slate-700/50 rounded-lg text-yellow-400 border border-slate-600/50"><i data-lucide="dices" class="w-5 h-5"></i></div>
+                                <h3 class="font-bold text-lg text-white">Random Fleet Names</h3>
+                                <span class="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded-md">random_names</span>
+                                <span class="text-xs font-semibold text-yellow-400 bg-yellow-900/30 px-2.5 py-1 rounded-full ml-2 border border-yellow-500/20" x-text="activeFleetRandom.names.length + ' names'"></span>
+                            </div>
+                        </div>
+                        <div x-show="activeFleetRandom.expanded" x-collapse>
+                            <div class="p-6 bg-slate-900/40 border-t border-slate-700/50">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Name List</h4>
+                                    <div class="flex gap-3">
+                                        <button @click="importToCategory('fleetRandom', activeFleetRandom)" class="text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-4 h-4"></i> Import</button>
+                                        <button @click="addNameToCategory(activeFleetRandom)" class="text-sm font-medium text-yellow-100 bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-yellow-500/20"><i data-lucide="plus" class="w-4 h-4"></i> Add Name</button>
+                                    </div>
+                                </div>
+
+                                <div x-show="activeFleetRandom.names.length === 0" class="flex flex-col items-center justify-center py-10 px-4 bg-slate-900/30 border border-dashed border-slate-700/50 rounded-xl">
+                                    <div class="p-3 bg-slate-800/50 rounded-full mb-3 text-slate-500"><i data-lucide="ghost" class="w-6 h-6"></i></div>
+                                    <p class="text-sm font-medium text-slate-400 mb-1">No names in this list</p>
+                                    <p class="text-xs text-slate-500 mb-4 text-center max-w-xs">You can add names manually or import a comma-separated list.</p>
+                                    <button @click="importToCategory('fleetRandom', activeFleetRandom)" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-3 h-3"></i> Quick Import</button>
+                                </div>
+
+                                <div x-show="activeFleetRandom.names.length > 0" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <template x-for="(nameObj, nIdx) in activeFleetRandom.names" :key="nameObj.id">
+                                        <div class="flex items-center gap-2 group">
+                                            <input type="text" x-model="nameObj.val" @input="debouncedUpdate('fleetRandom', 'random_names')" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 glowing-border focus:outline-none transition-all text-sm font-mono shadow-inner" placeholder="Enter name...">
+                                            <button @click="activeFleetRandom.names.splice(nIdx, 1); debouncedUpdate('fleetRandom', 'random_names')" class="text-slate-500 hover:text-red-400 p-2 opacity-50 group-hover:opacity-100 transition-opacity bg-slate-800 hover:bg-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Characters Tab -->
+            <section x-show="currentTab === 'chars'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Characters</h2>
+                    <p class="text-slate-400">Configure names for leaders and rulers.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <template x-for="(ship, index) in activeChars" :key="ship.key + ship.type">
+                        <div class="glass-panel rounded-2xl overflow-hidden shadow-lg shadow-black/20 transition-all">
+                            <div class="bg-slate-800/80 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-colors" @click="ship.expanded = !ship.expanded">
+                                <div class="flex items-center gap-4">
+                                    <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="ship.expanded ? '' : '-rotate-90'"></i>
+                                    <div class="p-2 bg-slate-700/50 rounded-lg text-purple-400 border border-slate-600/50"><i :data-lucide="ship.icon" class="w-5 h-5"></i></div>
+                                    <h3 class="font-bold text-lg text-white" x-text="ship.label"></h3>
+                                    <span class="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded-md" x-text="ship.key"></span>
+                                    <span class="text-xs font-semibold text-purple-400 bg-purple-900/30 px-2.5 py-1 rounded-full ml-2 border border-purple-500/20" x-text="ship.names.length + ' names'"></span>
+                                </div>
+                            </div>
+                            <div x-show="ship.expanded" x-collapse>
+                                <div class="p-6 bg-slate-900/40 border-t border-slate-700/50">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Name List</h4>
+                                        <div class="flex gap-3">
+                                            <button @click="importToCategory('chars', ship)" class="text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-4 h-4"></i> Import</button>
+                                            <button @click="addNameToCategory(ship)" class="text-sm font-medium text-purple-100 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-purple-500/20"><i data-lucide="plus" class="w-4 h-4"></i> Add Name</button>
+                                        </div>
+                                    </div>
+
+                                    <div x-show="ship.names.length === 0" class="flex flex-col items-center justify-center py-10 px-4 bg-slate-900/30 border border-dashed border-slate-700/50 rounded-xl">
+                                        <div class="p-3 bg-slate-800/50 rounded-full mb-3 text-slate-500"><i data-lucide="ghost" class="w-6 h-6"></i></div>
+                                        <p class="text-sm font-medium text-slate-400 mb-1">No names in this list</p>
+                                        <p class="text-xs text-slate-500 mb-4 text-center max-w-xs">You can add names manually or import a comma-separated list.</p>
+                                        <button @click="importToCategory('chars', ship)" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-600"><i data-lucide="clipboard-paste" class="w-3 h-3"></i> Quick Import</button>
+                                    </div>
+
+                                    <div x-show="ship.names.length > 0" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                        <template x-for="(nameObj, nIdx) in ship.names" :key="nameObj.id">
+                                            <div class="flex items-center gap-2 group">
+                                                <input type="text" x-model="nameObj.val" @input="debouncedUpdate('chars', ship.key, ship.type)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 glowing-border focus:outline-none transition-all text-sm font-mono shadow-inner" placeholder="Enter name...">
+                                                <button @click="ship.names.splice(nIdx, 1); debouncedUpdate('chars', ship.key, ship.type)" class="text-slate-500 hover:text-red-400 p-2 opacity-50 group-hover:opacity-100 transition-opacity bg-slate-800 hover:bg-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Import Modal -->
+    <div x-show="showImportModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showImportModal = false"></div>
+        <div class="glass-panel bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl relative z-10 flex flex-col border border-slate-600/50" @click.stop>
+            <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/50">
+                <h3 class="text-lg font-bold text-white">Import Names</h3>
+                <button @click="showImportModal = false" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-400 mb-4">Paste your names below. Separated by commas or newlines.</p>
+                <textarea x-model="importText" rows="6" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-slate-200 glowing-border focus:outline-none transition-all resize-y font-mono text-sm leading-relaxed" placeholder="Alpha, Beta, Gamma..."></textarea>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button @click="showImportModal = false" class="px-5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+                    <button @click="confirmImport()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-medium transition-colors shadow-lg shadow-sky-500/20">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                currentTab: 'meta',
+                saving: false,
+                toast: { show: false, msg: '', type: 'success' },
+                
+                showImportModal: false,
+                importText: '',
+                importTargetCategory: null,
+                importTargetShipKey: null,
+                importTargetType: null,
+                
+                tabs: [
+                    { id: 'meta', label: 'Metadata', icon: 'info' },
+                    { id: 'ships', label: 'Ship Classes', icon: 'rocket' },
+                    { id: 'fleets', label: 'Fleets', icon: 'layers' },
+                    { id: 'armies', label: 'Armies', icon: 'shield' },
+                    { id: 'planets', label: 'Planets', icon: 'globe' },
+                    { id: 'chars', label: 'Characters', icon: 'users' }
+                ],
+
+                availableShipTypes: [
+                    { group: 'Military', classes: [ { key: 'corvette', label: 'Corvette', icon: 'navigation' }, { key: 'destroyer', label: 'Destroyer', icon: 'send' }, { key: 'cruiser', label: 'Cruiser', icon: 'rocket' }, { key: 'battleship', label: 'Battleship', icon: 'anchor' }, { key: 'titan', label: 'Titan', icon: 'sword' }, { key: 'colossus', label: 'Colossus', icon: 'target' }, { key: 'juggernaut', label: 'Juggernaut', icon: 'shield-alert' } ] },
+                    { group: 'Civilian', classes: [ { key: 'science', label: 'Science Ship', icon: 'flask-conical' }, { key: 'constructor', label: 'Constructor', icon: 'hammer' }, { key: 'colonizer', label: 'Colony Ship', icon: 'leaf' }, { key: 'transport', label: 'Transport', icon: 'truck' } ] },
+                    { group: 'Stations & Generic', classes: [ { key: 'military_station_small', label: 'Defense Platform', icon: 'shield' }, { key: 'ion_cannon', label: 'Ion Cannon', icon: 'zap' }, { key: 'generic', label: 'Generic Fallback', icon: 'circle-dashed' } ] }
+                ],
+                availablePlanetTypes: [
+                    { group: 'Generic', classes: [ { key: 'generic', label: 'Generic Fallback', icon: 'globe' } ] },
+                    { group: 'Dry', classes: [ { key: 'pc_desert', label: 'Desert', icon: 'sun' }, { key: 'pc_arid', label: 'Arid', icon: 'wind' }, { key: 'pc_savannah', label: 'Savannah', icon: 'leaf' } ] },
+                    { group: 'Wet', classes: [ { key: 'pc_continental', label: 'Continental', icon: 'cloud-rain' }, { key: 'pc_ocean', label: 'Ocean', icon: 'droplet' }, { key: 'pc_tropical', label: 'Tropical', icon: 'palmtree' } ] },
+                    { group: 'Cold', classes: [ { key: 'pc_arctic', label: 'Arctic', icon: 'snowflake' }, { key: 'pc_tundra', label: 'Tundra', icon: 'mountain' }, { key: 'pc_alpine', label: 'Alpine', icon: 'mountain-snow' } ] },
+                    { group: 'Special', classes: [ { key: 'pc_gaia', label: 'Gaia', icon: 'sparkles' }, { key: 'pc_habitat', label: 'Habitat', icon: 'box' }, { key: 'pc_ringworld_habitable', label: 'Ringworld', icon: 'circle' } ] }
+                ],
+                availableArmyTypes: [
+                    { group: 'Generic', classes: [ { key: 'generic', label: 'Generic / Fallback', icon: 'users', expanded: false }, { key: 'defense_army', label: 'Defense Army', icon: 'shield', expanded: false }, { key: 'assault_army', label: 'Assault Army', icon: 'sword', expanded: false } ] },
+                    { group: 'Special', classes: [ { key: 'clone_army', label: 'Clone Army', icon: 'copy', expanded: false }, { key: 'undead_army', label: 'Undead Army', icon: 'skull', expanded: false }, { key: 'psionic_army', label: 'Psionic Army', icon: 'eye', expanded: false }, { key: 'xenomorph_army', label: 'Xenomorph Army', icon: 'bug', expanded: false }, { key: 'gene_warrior_army', label: 'Gene Warrior', icon: 'dna', expanded: false } ] },
+                    { group: 'Machine/Robotic', classes: [ { key: 'robotic_army', label: 'Robotic Army', icon: 'cpu', expanded: false }, { key: 'machine_assault_1', label: 'Machine Assault 1', icon: 'zap', expanded: false }, { key: 'machine_assault_2', label: 'Machine Assault 2', icon: 'zap', expanded: false }, { key: 'machine_assault_3', label: 'Machine Assault 3', icon: 'zap', expanded: false }, { key: 'machine_defense', label: 'Machine Defense', icon: 'shield-alert', expanded: false }, { key: 'robotic_defense_army', label: 'Robotic Defense', icon: 'shield-alert', expanded: false } ] },
+                    { group: 'Occupation & Other', classes: [ { key: 'occupation_army', label: 'Occupation Army', icon: 'flag', expanded: false }, { key: 'robotic_occupation_army', label: 'Robotic Occupation', icon: 'flag', expanded: false }, { key: 'machine_occupation_army', label: 'Machine Occupation', icon: 'flag', expanded: false }, { key: 'individual_machine_occupation_army', label: 'Ind. Machine Occ.', icon: 'flag', expanded: false }, { key: 'primitive_army', label: 'Primitive Army', icon: 'club', expanded: false }, { key: 'industrial_army', label: 'Industrial Army', icon: 'factory', expanded: false }, { key: 'postatomic_army', label: 'Post-Atomic Army', icon: 'radioactive', expanded: false }, { key: 'slave_army', label: 'Slave Army', icon: 'lock', expanded: false } ] }
+                ],
+                availableCharTypes: [
+                    { type: 'charFull', key: 'first_names_male', label: 'Male First Names', icon: 'user' },
+                    { type: 'charFull', key: 'first_names_female', label: 'Female First Names', icon: 'user' },
+                    { type: 'charFull', key: 'first_names', label: 'Unisex First Names', icon: 'users' },
+                    { type: 'charFull', key: 'last_names', label: 'Last Names', icon: 'contact' },
+                    { type: 'charRegnal', key: 'first_names_male', label: 'Regnal Names (Male)', icon: 'crown' },
+                    { type: 'charRegnal', key: 'first_names_female', label: 'Regnal Names (Female)', icon: 'crown' }
+                ],
+
+                data: {
+                    id: '', name: '', category: 'Humanoid', 
+                    shipNames: {}, planetNames: {}, armyNames: {}, 
+                    charFull: {}, charRegnal: {}, fleetSeq: {}, armySeq: {}, fleetRandom: {}
+                },
+                
+                groupedShips: [],
+                groupedPlanets: [],
+                activeChars: [],
+                activeFleetRandom: { key: 'random_names', label: 'Random Fleet Names', icon: 'dices', expanded: false, names: [] },
+                updateTimeout: null,
+
+                async init() {
+                    try {
+                        const res = await fetch('/api/data');
+                        if (!res.ok) throw new Error("Network response was not ok");
+                        const raw = await res.json();
+                        this.data = raw;
+                        if(!this.data.fleetSeq) this.data.fleetSeq = {};
+                        if(!this.data.armySeq) this.data.armySeq = {};
+                        if(!this.data.fleetRandom) this.data.fleetRandom = {};
+                        
+                        this.initGroupedCategory('ships', this.data.shipNames, this.availableShipTypes);
+                        this.initGroupedCategory('planets', this.data.planetNames, this.availablePlanetTypes);
+                        
+                        if(this.data.fleetRandom['random_names']) {
+                            this.activeFleetRandom.names = this.data.fleetRandom['random_names'].map((n, i) => ({ id: Date.now() + i + Math.random(), val: n }));
+                        }
+                        
+                        // Load Characters fixed categories
+                        this.availableCharTypes.forEach(ct => {
+                            let names = [];
+                            if (this.data[ct.type] && Object.hasOwn(this.data[ct.type], ct.key)) {
+                                names = this.data[ct.type][ct.key];
+                                if (!Array.isArray(names)) names = [];
+                            }
+                            this.activeChars.push({
+                                type: ct.type, key: ct.key, label: ct.label, icon: ct.icon,
+                                expanded: false,
+                                names: names.map((n, i) => ({ id: Date.now() + i + Math.random(), val: n }))
+                            });
+                        });
+
+                        this.$nextTick(() => { if(window.lucide) lucide.createIcons(); });
+                    } catch (e) {
+                        this.showToast(e.message, 'error');
+                    }
+                },
+
+                initGroupedCategory(type, dataMap, availableTypes) {
+                    const groupedList = type === 'ships' ? this.groupedShips : this.groupedPlanets;
+                    
+                    availableTypes.forEach(group => {
+                        const newGroup = { group: group.group, classes: [] };
+                        group.classes.forEach(cls => {
+                            let names = [];
+                            if(dataMap && Object.hasOwn(dataMap, cls.key)) {
+                                names = dataMap[cls.key];
+                                if (!Array.isArray(names)) names = [];
+                            }
+                            newGroup.classes.push({
+                                key: cls.key, label: cls.label, icon: cls.icon,
+                                expanded: false,
+                                names: names.map((n, i) => ({ id: Date.now() + i + Math.random(), val: n }))
+                            });
+                        });
+                        groupedList.push(newGroup);
+                    });
+
+                    if(dataMap) {
+                        const otherGroup = { group: 'Other / Custom', classes: [] };
+                        for (const [key, names] of Object.entries(dataMap)) {
+                            let found = false;
+                            availableTypes.forEach(g => { if(g.classes.find(c => c.key === key)) found = true; });
+                            if(!found) {
+                                otherGroup.classes.push({
+                                    key: key, label: key, icon: 'settings',
+                                    expanded: false,
+                                    names: names.map((n, i) => ({ id: Date.now() + i + Math.random(), val: n }))
+                                });
+                            }
+                        }
+                        if (otherGroup.classes.length > 0) groupedList.push(otherGroup);
+                    }
+                },
+
+                switchTab(tabId) {
+                    this.currentTab = tabId;
+                    this.$nextTick(() => { if(window.lucide) lucide.createIcons(); });
+                },
+
+                addNameToCategory(ship) {
+                    ship.names.push({ id: Date.now() + Math.random(), val: '' });
+                },
+
+                importToCategory(catType, ship) {
+                    this.importTargetCategory = catType;
+                    this.importTargetShipKey = ship.key;
+                    this.importTargetType = ship.type;
+                    this.importText = '';
+                    this.showImportModal = true;
+                },
+
+                confirmImport() {
+                    if(!this.importText.trim()) { this.showImportModal = false; return; }
+                    
+                    let ship = null;
+                    if (this.importTargetCategory === 'fleetRandom') {
+                        ship = this.activeFleetRandom;
+                    } else if (this.importTargetCategory === 'ships') {
+                        for(let g of this.groupedShips) { ship = g.classes.find(s => s.key === this.importTargetShipKey); if(ship) break; }
+                    } else if (this.importTargetCategory === 'planets') {
+                        for(let g of this.groupedPlanets) { ship = g.classes.find(s => s.key === this.importTargetShipKey); if(ship) break; }
+                    } else if (this.importTargetCategory === 'chars') {
+                        ship = this.activeChars.find(s => s.key === this.importTargetShipKey && (this.importTargetType ? s.type === this.importTargetType : true));
+                    }
+                    
+                    if(ship) {
+                        const parsed = this.importText.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
+                        parsed.forEach(n => { ship.names.push({ id: Date.now() + Math.random(), val: n }); });
+                        this.debouncedUpdate(this.importTargetCategory, ship.key, ship.type);
+                        this.showToast(`Imported ${parsed.length} names.`);
+                    }
+                    this.showImportModal = false;
+                },
+
+                debouncedUpdate(type, key, subType=null) {
+                    clearTimeout(this.updateTimeout);
+                    this.updateTimeout = setTimeout(() => {
+                        let ship = null;
+                        if (type === 'fleetRandom') {
+                            ship = this.activeFleetRandom;
+                        } else if (type === 'ships') {
+                            for(let g of this.groupedShips) { ship = g.classes.find(s => s.key === key); if(ship) break; }
+                        } else if (type === 'planets') {
+                            for(let g of this.groupedPlanets) { ship = g.classes.find(s => s.key === key); if(ship) break; }
+                        } else if (type === 'chars') {
+                            ship = this.activeChars.find(s => s.key === key && (subType ? s.type === subType : true));
+                        }
+                        
+                        if(ship) {
+                            if(type === 'ships') {
+                                if(!this.data.shipNames) this.data.shipNames = {};
+                                this.data.shipNames[key] = ship.names.map(n => n.val.trim()).filter(n => n);
+                            } else if (type === 'planets') {
+                                if(!this.data.planetNames) this.data.planetNames = {};
+                                this.data.planetNames[key] = ship.names.map(n => n.val.trim()).filter(n => n);
+                            } else if (type === 'chars') {
+                                if(!this.data[subType]) this.data[subType] = {};
+                                this.data[subType][key] = ship.names.map(n => n.val.trim()).filter(n => n);
+                            } else if (type === 'fleetRandom') {
+                                if(!this.data.fleetRandom) this.data.fleetRandom = {};
+                                this.data.fleetRandom[key] = ship.names.map(n => n.val.trim()).filter(n => n);
+                            }
+                        }
+                    }, 500);
+                },
+
+                insertVariable(mapName, key, variable) {
+                    if(!this.data[mapName][key]) this.data[mapName][key] = '';
+                    this.data[mapName][key] += variable;
+                },
+
+                previewName(format, index) {
+                    if(!format) return '...';
+                    const ordinal = index + (index === 1 ? 'st' : index === 2 ? 'nd' : index === 3 ? 'rd' : 'th');
+                    const roman = index === 1 ? 'I' : index === 2 ? 'II' : index === 3 ? 'III' : index === 4 ? 'IV' : 'V';
+                    return format.replace(/%O%/g, ordinal).replace(/%R%/g, roman).replace(/\$C\$/g, index);
+                },
+
+                async save() {
+                    this.saving = true;
+                    try {
+                        const res = await fetch('/api/data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.data)
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        this.showToast("Saved successfully to TSV!");
+                    } catch(e) {
+                        this.showToast(e.message, 'error');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                showToast(msg, type='success') {
+                    this.toast = { show: true, msg, type };
+                    this.$nextTick(() => { if(window.lucide) lucide.createIcons(); });
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
