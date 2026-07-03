@@ -1,6 +1,6 @@
 # Stellaris Personal Modding Tools
 
-A collection of automated tools designed to streamline modding Stellaris, specifically focusing on injecting custom portraits using the achievement-compatible "Non-Intrusive Replacer" method.
+A collection of automated tools designed to streamline modding Stellaris, specifically focusing on injecting custom portraits using the clean, native "Portrait Sets" architecture.
 
 ## Features
 
@@ -46,6 +46,10 @@ Run the installer script to deploy all mods located in the `mod/` folder to your
 
 ## How It Works
 
-The `create_portrait_mod` tool uses the **Non-Intrusive Replacer** method. It safely overwrites a vanilla portrait group without touching the game's core `00_species_classes.txt` file (meaning it doesn't break checksums/achievements). 
+The `create_portrait_mod` tool uses the **Portrait Sets** architecture introduced in newer versions of Stellaris. Instead of hacking or overriding vanilla files, it correctly registers your image as a brand new, standalone portrait.
 
-It injects a custom trigger so that if an empire's species name perfectly matches the name you provided (e.g. "Awesomebots"), it uses your custom image. Otherwise, it falls back to the default vanilla portrait for all AI empires.
+*   **Custom Portraits:** Generates a new portrait definition in `gfx/portraits/portraits/` with your custom image.
+*   **Exclusive Sets:** Registers the portrait in `common/portrait_sets/` and lists it under `non_randomized_portraits`. This guarantees the portrait appears natively in the empire creator but is never randomly used by the AI.
+*   **UI Categories:** Safely appends your new portrait set to the vanilla UI groups via `common/portrait_categories/` so it natively appears at the end of the vanilla portrait list.
+
+*(Note: Because this creates new gameplay data objects, it changes the game checksum and disables Iron Man achievements.)*
