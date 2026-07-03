@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellaris Empire Forge</title>
+    <!-- Alpine Plugins -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0B0E14; color: #E2E8F0; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glowing-border:focus-within { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        stellar: { dark: '#0B0E14', card: '#1E293B', accent: '#f59e0b' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen flex overflow-hidden font-sans antialiased" x-data="app()">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 glass-panel border-r border-slate-700/50 flex flex-col z-20">
+        <div class="p-6">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Empire Forge</h1>
+            <p class="text-xs text-slate-400 mt-1">Stellaris Modding Tool</p>
+        </div>
+        <nav class="flex-1 px-4 space-y-2 overflow-y-auto scrollbar-hide">
+            <template x-for="tab in tabs">
+                <button @click="currentTab = tab.id" 
+                    :class="currentTab === tab.id ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-inner' : 'text-slate-400 hover:bg-slate-800 border-transparent hover:text-slate-200'"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group">
+                    <i :data-lucide="tab.icon" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                    <span x-text="tab.label" class="font-medium"></span>
+                </button>
+            </template>
+        </nav>
+        <div class="p-4 mt-auto space-y-2">
+            <button @click="save()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold shadow-lg shadow-amber-500/30 transition-all flex justify-center items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span x-text="saving ? 'Saving...' : 'Save Config'"></span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
+        <div class="max-w-4xl mx-auto pb-24">
+            <!-- Toast -->
+            <div x-show="toast.show" x-transition class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border" :class="toast.type === 'success' ? 'bg-slate-800 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-red-500 text-red-400'">
+                <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-5 h-5"></i>
+                <span x-text="toast.msg" class="font-medium text-slate-200"></span>
+            </div>
+
+            <!-- Identity Tab -->
+            <section x-show="currentTab === 'identity'" x-transition.opacity.duration.300ms>
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Empire Identity</h2>
+                    <p class="text-slate-400">Configure the core details of your empire.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Empire Name</label>
+                            <input type="text" x-model="data.name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. United Earth Directorate">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Empire Adjective</label>
+                            <input type="text" x-model="data.adjective" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. Human">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Author</label>
+                        <input type="text" x-model="data.author" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. MyUsername">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Ship Prefix</label>
+                        <input type="text" x-model="data.ship_prefix" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. UES">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Species Tab -->
+            <section x-show="currentTab === 'species'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Species</h2>
+                    <p class="text-slate-400">Configure your primary species and portrait.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Species Name</label>
+                            <input type="text" x-model="data.species.name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Species Plural</label>
+                            <input type="text" x-model="data.species.plural" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Species Adjective</label>
+                        <input type="text" x-model="data.species.adjective" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Archetype (Class)</label>
+                            <select x-model="data.species.class" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <option value="humanoid">Humanoid</option>
+                                <option value="machine">Machine</option>
+                                <option value="mammalian">Mammalian</option>
+                                <option value="reptilian">Reptilian</option>
+                                <option value="avian">Avian</option>
+                                <option value="plantoid">Plantoid</option>
+                                <option value="fungoid">Fungoid</option>
+                                <option value="lithoid">Lithoid</option>
+                                <option value="aquatic">Aquatic</option>
+                                <option value="toxoid">Toxoid</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Portrait Image (Any Image)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" x-model="data.species.portrait_image" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all" placeholder="e.g. portrait.jpg">
+                                <button type="button" @click="$refs.portraitInput.click()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-3 rounded-xl font-semibold shadow-sm transition-all" :disabled="uploading">
+                                    <i data-lucide="upload" class="w-5 h-5"></i>
+                                </button>
+                                <input type="file" x-ref="portraitInput" @change="uploadFile($event, 'portrait')" accept="image/*" class="hidden">
+                            </div>
+                            <template x-if="data.species.portrait_image">
+                                <div class="mt-2 flex justify-center">
+                                    <img :src="'/api/workspace_file?file=' + data.species.portrait_image" class="h-32 object-contain rounded-lg border border-slate-700 bg-slate-800 p-1 shadow-inner">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Traits</label>
+                        <div x-data="{ open: false, search: '' }" class="relative" @click.outside="open = false">
+                            <div class="flex flex-wrap gap-2 p-2 bg-slate-900 border border-slate-700 rounded-xl min-h-[50px] cursor-pointer glowing-border focus-within:border-amber-500" @click="open = true">
+                                <template x-for="item in data.species.traits" :key="item">
+                                    <span class="bg-amber-600 text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                                        <span x-text="formatKey(item)"></span>
+                                        <button type="button" @click.stop="data.species.traits = data.species.traits.filter(t => t !== item)" class="hover:text-red-300 font-bold ml-1">&times;</button>
+                                    </span>
+                                </template>
+                                <input type="text" x-model="search" @focus="open = true" class="bg-transparent border-none outline-none text-sm text-white flex-1 min-w-[120px]" placeholder="Search traits...">
+                            </div>
+                            <div x-show="open" x-transition class="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                <template x-for="option in gamedata.traits.filter(t => !data.species.traits.includes(t) && (search === '' || t.toLowerCase().includes(search.toLowerCase()) || formatKey(t).toLowerCase().includes(search.toLowerCase())))" :key="option">
+                                    <div @click="data.species.traits.push(option); search = ''; open = false" class="px-4 py-2 hover:bg-slate-700 cursor-pointer text-sm text-slate-200 border-b border-slate-700/50 last:border-0">
+                                        <span x-text="formatKey(option)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Biography</label>
+                        <textarea x-model="data.biography" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Homeworld Tab -->
+            <section x-show="currentTab === 'homeworld'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Homeworld</h2>
+                    <p class="text-slate-400">Configure your starting planet and system.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Planet Name</label>
+                        <input type="text" x-model="data.homeworld.name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Planet Class</label>
+                        <select x-model="data.homeworld.class" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                            <option value="pc_continental">Continental</option>
+                            <option value="pc_ocean">Ocean</option>
+                            <option value="pc_tropical">Tropical</option>
+                            <option value="pc_desert">Desert</option>
+                            <option value="pc_arid">Arid</option>
+                            <option value="pc_savannah">Savannah</option>
+                            <option value="pc_arctic">Arctic</option>
+                            <option value="pc_alpine">Alpine</option>
+                            <option value="pc_tundra">Tundra</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">System Name</label>
+                        <input type="text" x-model="data.homeworld.system_name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Government Tab -->
+            <section x-show="currentTab === 'government'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Government & Ethics</h2>
+                    <p class="text-slate-400">Configure the political structure.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Authority</label>
+                            <select x-model="data.government.authority" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <template x-for="auth in gamedata.authorities" :key="auth">
+                                    <option :value="auth" x-text="formatKey(auth)"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Origin</label>
+                            <select x-model="data.government.origin" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <template x-for="orig in gamedata.origins" :key="orig">
+                                    <option :value="orig" x-text="formatKey(orig)"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Ethics</label>
+                        <div x-data="{ open: false, search: '' }" class="relative" @click.outside="open = false">
+                            <div class="flex flex-wrap gap-2 p-2 bg-slate-900 border border-slate-700 rounded-xl min-h-[50px] cursor-pointer glowing-border focus-within:border-amber-500" @click="open = true">
+                                <template x-for="item in data.government.ethics" :key="item">
+                                    <span class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                                        <span x-text="formatKey(item)"></span>
+                                        <button type="button" @click.stop="data.government.ethics = data.government.ethics.filter(t => t !== item)" class="hover:text-red-300 font-bold ml-1">&times;</button>
+                                    </span>
+                                </template>
+                                <input type="text" x-model="search" @focus="open = true" class="bg-transparent border-none outline-none text-sm text-white flex-1 min-w-[120px]" placeholder="Search ethics...">
+                            </div>
+                            <div x-show="open" x-transition class="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                <template x-for="option in gamedata.ethics.filter(t => !data.government.ethics.includes(t) && (search === '' || t.toLowerCase().includes(search.toLowerCase()) || formatKey(t).toLowerCase().includes(search.toLowerCase())))" :key="option">
+                                    <div @click="data.government.ethics.push(option); search = ''; open = false" class="px-4 py-2 hover:bg-slate-700 cursor-pointer text-sm text-slate-200 border-b border-slate-700/50 last:border-0">
+                                        <span x-text="formatKey(option)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300">Civics</label>
+                        <div x-data="{ open: false, search: '' }" class="relative" @click.outside="open = false">
+                            <div class="flex flex-wrap gap-2 p-2 bg-slate-900 border border-slate-700 rounded-xl min-h-[50px] cursor-pointer glowing-border focus-within:border-amber-500" @click="open = true">
+                                <template x-for="item in data.government.civics" :key="item">
+                                    <span class="bg-emerald-600 text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                                        <span x-text="formatKey(item)"></span>
+                                        <button type="button" @click.stop="data.government.civics = data.government.civics.filter(t => t !== item)" class="hover:text-red-300 font-bold ml-1">&times;</button>
+                                    </span>
+                                </template>
+                                <input type="text" x-model="search" @focus="open = true" class="bg-transparent border-none outline-none text-sm text-white flex-1 min-w-[120px]" placeholder="Search civics...">
+                            </div>
+                            <div x-show="open" x-transition class="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                <template x-for="option in gamedata.civics.filter(t => !data.government.civics.includes(t) && (search === '' || t.toLowerCase().includes(search.toLowerCase()) || formatKey(t).toLowerCase().includes(search.toLowerCase())))" :key="option">
+                                    <div @click="data.government.civics.push(option); search = ''; open = false" class="px-4 py-2 hover:bg-slate-700 cursor-pointer text-sm text-slate-200 border-b border-slate-700/50 last:border-0">
+                                        <span x-text="formatKey(option)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Design Tab -->
+            <section x-show="currentTab === 'design'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Graphics & Namelist</h2>
+                    <p class="text-slate-400">Configure visual and audio elements.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Shipset</label>
+                            <select x-model="data.shipset" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <template x-for="c in gamedata.graphicalCultures" :key="c">
+                                    <option :value="c" x-text="c"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Cityset</label>
+                            <select x-model="data.cityset" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <template x-for="c in gamedata.graphicalCultures" :key="c">
+                                    <option :value="c" x-text="c"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <div class="space-y-2 col-span-2">
+                            <label class="text-sm font-semibold text-slate-300">Room Background (<span x-text="data.room_background"></span>)</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-80 overflow-y-auto p-4 bg-slate-900 rounded-xl border border-slate-700 shadow-inner">
+                                <template x-for="r in gamedata.roomBackgrounds" :key="r">
+                                    <div @click="data.room_background = r" :class="data.room_background === r ? 'ring-2 ring-amber-500 scale-105 z-10' : 'hover:ring-2 hover:ring-slate-500 hover:scale-105 opacity-70 hover:opacity-100'" class="cursor-pointer rounded-lg overflow-hidden transition-all relative shadow-lg">
+                                        <img :src="'/api/image?path=gfx/portraits/city_sets/' + r + '.dds'" loading="lazy" class="w-full h-auto aspect-video object-cover" :alt="r" onerror="this.style.display='none'">
+                                        <div class="absolute bottom-0 w-full bg-black/80 backdrop-blur-sm text-[10px] text-center text-white py-1 truncate px-1" x-text="r"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 col-span-2">
+                            <label class="text-sm font-semibold text-slate-300">Namelist TSV Path</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" x-model="data.namelist.tsv_path" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none transition-all font-mono" placeholder="e.g. namelist.tsv">
+                                <button type="button" @click="$refs.namelistInput.click()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-3 rounded-xl font-semibold shadow-sm transition-all" :disabled="uploading">
+                                    <i data-lucide="upload" class="w-5 h-5"></i>
+                                </button>
+                                <input type="file" x-ref="namelistInput" @change="uploadFile($event, 'namelist')" accept=".tsv,.txt,.csv" class="hidden">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Flag Tab -->
+            <section x-show="currentTab === 'flag'" x-transition.opacity.duration.300ms style="display:none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Flag</h2>
+                    <p class="text-slate-400">Configure your empire's emblem.</p>
+                </div>
+                <div class="glass-panel rounded-3xl p-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Primary Color</label>
+                            <select x-model="flagPrimary" @change="updateFlagColors()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <option value="null">None (null)</option>
+                                <template x-for="c in gamedata.flagColors" :key="c">
+                                    <option :value="c" x-text="c"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300">Secondary Color</label>
+                            <select x-model="flagSecondary" @change="updateFlagColors()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <option value="null">None (null)</option>
+                                <template x-for="c in gamedata.flagColors" :key="c">
+                                    <option :value="c" x-text="c"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <div class="space-y-2 col-span-2">
+                            <label class="text-sm font-semibold text-slate-300">Flag Pattern (<span x-text="data.flag.pattern"></span>)</label>
+                            <div class="grid grid-cols-4 md:grid-cols-8 gap-3 max-h-60 overflow-y-auto p-4 bg-slate-900 rounded-xl border border-slate-700 shadow-inner">
+                                <template x-for="p in gamedata.flagPatterns" :key="p">
+                                    <div @click="data.flag.pattern = p + '.dds'" :class="data.flag.pattern === (p + '.dds') ? 'ring-2 ring-amber-500 scale-110 z-10' : 'hover:ring-2 hover:ring-slate-500 opacity-60 hover:opacity-100'" class="cursor-pointer rounded-md overflow-hidden transition-all bg-slate-800">
+                                        <img :src="'/api/image?path=flags/backgrounds/' + p + '.dds'" loading="lazy" class="w-full h-auto aspect-square object-cover" :alt="p" onerror="this.style.display='none'">
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 col-span-2">
+                            <label class="text-sm font-semibold text-slate-300">Icon Category</label>
+                            <select x-model="data.flag.icon.category" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white glowing-border focus:outline-none">
+                                <template x-for="cat in gamedata.flagCategories" :key="cat">
+                                    <option :value="cat" x-text="cat"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="space-y-2 col-span-2">
+                            <label class="text-sm font-semibold text-slate-300">Icon Emblem (<span x-text="data.flag.icon.file"></span>)</label>
+                            <div class="grid grid-cols-4 md:grid-cols-8 gap-3 max-h-60 overflow-y-auto p-4 bg-slate-900 rounded-xl border border-slate-700 shadow-inner">
+                                <template x-for="icon in (gamedata.flagIcons[data.flag.icon.category] || [])" :key="icon">
+                                    <div @click="data.flag.icon.file = icon + '.dds'" :class="data.flag.icon.file === (icon + '.dds') ? 'ring-2 ring-amber-500 scale-110 z-10' : 'hover:ring-2 hover:ring-slate-500 opacity-60 hover:opacity-100'" class="cursor-pointer rounded-md overflow-hidden transition-all bg-slate-800 p-2">
+                                        <img :src="'/api/image?path=flags/' + data.flag.icon.category + '/' + icon + '.dds'" loading="lazy" class="w-full h-auto aspect-square object-contain" :alt="icon" onerror="this.style.display='none'">
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        function app() {
+            return {
+                currentTab: 'identity',
+                saving: false,
+                uploading: false,
+                toast: { show: false, msg: '', type: 'success' },
+                flagColorsInput: '',
+                flagPrimary: 'null',
+                flagSecondary: 'null',
+                
+                gamedata: { 
+                    traits: [], ethics: [], civics: [], authorities: [], origins: [],
+                    graphicalCultures: [], roomBackgrounds: [],
+                    flagCategories: [], flagIcons: {}, flagPatterns: [], flagColors: []
+                },
+
+                async uploadFile(event, field) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    this.uploading = true;
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        let res = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        let data = await res.json();
+                        
+                        if (field === 'portrait') {
+                            this.data.species.portrait_image = data.filename;
+                        } else if (field === 'namelist') {
+                            this.data.namelist.tsv_path = data.filename;
+                        }
+                        this.showToast('File uploaded successfully');
+                    } catch (e) {
+                        this.showToast('Failed to upload: ' + e.message, 'error');
+                    } finally {
+                        this.uploading = false;
+                        event.target.value = ''; // reset input
+                    }
+                },
+
+                updateFlagColors() {
+                    let c = this.data.flag.colors || [];
+                    this.data.flag.colors = [this.flagPrimary, this.flagSecondary, c[2] || 'null', c[3] || 'null'];
+                    this.flagColorsInput = this.data.flag.colors.join(', ');
+                },
+
+                formatKey(key) {
+                    if (!key) return '';
+                    let title = key.replace(/^(trait|ethic|civic|auth|origin)_/, '')
+                                   .split('_')
+                                   .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                                   .join(' ');
+                    return `${title} (${key})`;
+                },
+                
+                tabs: [
+                    { id: 'identity', label: 'Identity', icon: 'fingerprint' },
+                    { id: 'species', label: 'Species', icon: 'dna' },
+                    { id: 'homeworld', label: 'Homeworld', icon: 'globe' },
+                    { id: 'government', label: 'Government', icon: 'landmark' },
+                    { id: 'design', label: 'Graphics', icon: 'palette' },
+                    { id: 'flag', label: 'Flag', icon: 'flag' },
+                ],
+                
+                data: {
+                    name: '', adjective: '', author: '', biography: '', ship_prefix: '', shipset: 'humanoid_01', cityset: 'humanoid_01', room_background: 'personality_federation_builders_room',
+                    species: { name: '', plural: '', adjective: '', class: 'humanoid', portrait_image: '', traits: [] },
+                    homeworld: { name: '', class: 'pc_continental', system_name: '' },
+                    government: { authority: 'auth_democratic', origin: 'origin_default', ethics: [], civics: [] },
+                    namelist: { tsv_path: '' },
+                    flag: { colors: [], pattern: 'pattern_solid.dds', icon: { category: 'human', file: 'flag_human_9.dds' } }
+                },
+                
+                init() {
+                    lucide.createIcons();
+                    fetch('/api/data')
+                        .then(res => res.json())
+                        .then(d => {
+                            // Merge fetched data with defaults
+                            if(d) {
+                                Object.assign(this.data, d);
+                                this.flagColorsInput = (this.data.flag.colors || []).join(', ');
+                                if (this.data.flag.colors && this.data.flag.colors.length >= 2) {
+                                    this.flagPrimary = this.data.flag.colors[0];
+                                    this.flagSecondary = this.data.flag.colors[1];
+                                }
+                            }
+                        })
+                        .catch(err => console.error(err));
+
+                    fetch('/api/gamedata')
+                        .then(res => res.json())
+                        .then(gd => {
+                            if(gd) {
+                                this.gamedata.traits = gd.Traits || [];
+                                this.gamedata.ethics = gd.Ethics || [];
+                                this.gamedata.authorities = gd.Authorities || [];
+                                this.gamedata.civics = (gd.Civics || []).filter(c => !c.startsWith('origin_'));
+                                this.gamedata.origins = (gd.Civics || []).filter(c => c.startsWith('origin_'));
+                                this.gamedata.graphicalCultures = gd.GraphicalCultures || [];
+                                this.gamedata.roomBackgrounds = gd.RoomBackgrounds || [];
+                                this.gamedata.flagCategories = gd.FlagCategories || [];
+                                this.gamedata.flagIcons = gd.FlagIcons || {};
+                                this.gamedata.flagPatterns = gd.FlagPatterns || [];
+                                this.gamedata.flagColors = gd.FlagColors || [];
+                            }
+                        })
+                        .catch(err => console.error('Failed to load gamedata:', err));
+                    
+                    this.$watch('currentTab', () => {
+                        this.$nextTick(() => lucide.createIcons());
+                    });
+                },
+
+                showToast(msg, type='success') {
+                    this.toast = { show: true, msg, type };
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                },
+
+                async save() {
+                    this.saving = true;
+                    try {
+                        let res = await fetch('/api/data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.data)
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        this.showToast('Configuration saved successfully');
+                    } catch (e) {
+                        this.showToast('Failed to save: ' + e.message, 'error');
+                    } finally {
+                        this.saving = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

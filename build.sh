@@ -15,4 +15,7 @@ go build -o install_mods generators/install_mods.go
 echo "[*] Compiling create_namelist_mod..."
 go build -o create_namelist_mod generators/create_namelist_mod.go
 
+echo "[*] Compiling create_empire_mod..."
+go build -o create_empire_mod generators/create_empire_mod.go
+
 echo "[+] Build complete!"
