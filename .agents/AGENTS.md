@@ -38,6 +38,13 @@ These rules apply specifically to this workspace, which is dedicated to modifyin
     *   `guibounds`
     *   `debugtooltip` (and using `CTRL+ALT+Right Click` on elements to open the `.gui` file)
 
+## Workspace Layout
+
+8.  **Project Root vs. Stellaris Root**: 
+    *   The top-level `game-mod` directory is the main workspace, but Stellaris-specific tools are housed in the `stellaris` subdirectory.
+    *   Stellaris tools (like `create_portrait_mod` and `install_mods`) should **always** be executed from within the `stellaris` directory.
+    *   The tools write their output to a local `mod/` directory located at `game-mod/stellaris/mod/` (i.e. `./mod` relative to the `stellaris` directory). Do **not** use `../mod/` for outputs assuming the tool is run from a subfolder or from the top-level root.
+
 ## References
 
 *   For comprehensive documentation, see the full guide at `docs/stellaris_ui_modding_guide.md`.
