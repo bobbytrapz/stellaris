@@ -1,46 +1,62 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
+	"github.com/bobby/stellaris-mods/pkg/log"
 )
 
+var verbose bool
+
 func main() {
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+	flag.BoolVar(&verbose, "v", false, "Enable verbose output (shorthand)")
+	flag.Parse()
+
 	root, err := getModDirectoryRoot()
 	if err != nil {
-		log.Fatalf("get_mod_root: %s", err)
+		log.Fatal("get_mod_root: %s", err)
 	}
-	log.Println("Create mod directory:", root)
+	
+	if verbose {
+		log.Info("Create mod directory: %s", root)
+	}
 
 	mods, err := listMods()
 	if err != nil {
-		log.Fatalf("list_mods: %s", err)
+		log.Fatal("list_mods: %s", err)
 	}
-	log.Println("Need to copy:", mods)
 
 	for _, mod := range mods {
-		log.Println("Copy:", mod.Name)
-
 		existingModDirectory := filepath.Join(root, mod.Name)
-		log.Println("Removing existing directory: ", existingModDirectory)
+		if verbose {
+			log.Info("Removing existing directory: %s", existingModDirectory)
+		}
+		
 		if err := os.RemoveAll(existingModDirectory); err != nil {
-			log.Printf("Warning: failed to remove existing mod directory %q: %s", existingModDirectory, err)
+			log.Warning("failed to remove existing mod directory %q: %s", existingModDirectory, err)
 		}
 
 		for _, file := range mod.Files {
 			from := filepath.Join("mod", file)
 			to := filepath.Join(root, file)
 
-			log.Printf("Copy: %q -> %q", from, to)
+			if verbose {
+				log.Info("Copy: %q -> %q", from, to)
+			}
 
 			if err := copyFile(from, to); err != nil {
-				log.Fatalf("copy_file: %s", err)
+				log.Fatal("copy_file: %s", err)
 			}
 		}
+		
+		log.Success("Installed %s", mod.Name)
 	}
+	
+	log.Success("All mods installed successfully!")
 }
 
 func getModDirectoryRoot() (string, error) {
