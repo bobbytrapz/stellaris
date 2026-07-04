@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellaris Localisation Editor</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300 font-sans min-h-screen">
+    <div x-data="locEditor()" x-init="init()" class="container mx-auto max-w-5xl p-6">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-100">Stellaris Localisation Editor</h1>
+            
+            <div class="flex space-x-4">
+                <input type="text" x-model="modName" placeholder="Mod Folder Name (e.g. my_cool_mod)" class="bg-slate-800 text-slate-200 border border-slate-700 px-4 py-2 rounded focus:outline-none focus:border-indigo-500 w-64">
+                <button @click="generateMod()" :disabled="isGenerating" class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded font-medium transition-colors">
+                    <span x-show="!isGenerating">Generate Mod</span>
+                    <span x-show="isGenerating">Generating...</span>
+                </button>
+            </div>
+        </div>
+        
+        <div x-show="successMessage" x-cloak class="bg-emerald-900/50 border border-emerald-500 text-emerald-300 p-4 rounded mb-6 flex justify-between items-center">
+            <span x-text="successMessage"></span>
+            <button @click="successMessage = ''" class="text-emerald-500 hover:text-emerald-300">&times;</button>
+        </div>
+        <div x-show="errorMessage" x-cloak class="bg-rose-900/50 border border-rose-500 text-rose-300 p-4 rounded mb-6 flex justify-between items-center">
+            <span x-text="errorMessage"></span>
+            <button @click="errorMessage = ''" class="text-rose-500 hover:text-rose-300">&times;</button>
+        </div>
+
+        <div class="mb-8">
+            <input type="text" x-model="searchQuery" @input.debounce.500ms="search()" @keyup.enter="search()" placeholder="Search localisation (e.g. 'Politician', 'job_politician')..." class="w-full bg-slate-800 text-slate-200 border border-slate-700 px-6 py-4 rounded-lg focus:outline-none focus:border-indigo-500 text-lg shadow-inner">
+        </div>
+
+        <div x-show="isSearching" class="text-center text-slate-500 py-12">
+            Searching...
+        </div>
+
+        <!-- Category Browser -->
+        <div x-show="!isSearching && entities.length === 0 && searchQuery === ''" x-cloak>
+            <h2 class="text-xl font-bold text-slate-200 mb-4">Browse Categories</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <template x-for="cat in categories" :key="cat">
+                    <button @click="browseCategory(cat)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded p-4 text-left transition-colors flex items-center justify-between group">
+                        <span x-text="cat" class="font-medium text-slate-300 group-hover:text-indigo-400"></span>
+                        <span class="text-slate-600 group-hover:text-indigo-500">&rarr;</span>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div x-show="!isSearching && entities.length > 0" class="space-y-6">
+            <div class="flex justify-between items-center text-slate-500 text-sm mb-2">
+                <span>Showing <span x-text="entities.length"></span> grouped entities</span>
+                <button x-show="currentCategory" @click="clearCategory()" class="text-indigo-400 hover:text-indigo-300">Clear Category Filter</button>
+            </div>
+
+            <template x-for="entity in entities" :key="entity.baseKey">
+                <div class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-lg" x-data="{ activeTab: Object.keys(entity.variants)[0] }">
+                    <div class="bg-slate-900/50 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded text-slate-300 uppercase tracking-wider" x-text="entity.category"></span>
+                            <h3 class="text-lg font-mono font-medium text-slate-200" x-text="entity.baseKey"></h3>
+                        </div>
+                    </div>
+                    
+                    <div class="px-6 pt-4 flex space-x-2 border-b border-slate-700">
+                        <template x-for="variant in Object.keys(entity.variants)" :key="variant">
+                            <button @click="activeTab = variant" 
+                                    :class="activeTab === variant ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-slate-600'"
+                                    class="px-4 py-2 border-b-2 font-medium transition-colors capitalize">
+                                <span x-text="variant === 'default' ? 'Base' : variant"></span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <div class="p-6 bg-slate-800">
+                        <template x-for="variant in Object.keys(entity.variants)" :key="variant">
+                            <div x-show="activeTab === variant" class="space-y-4">
+                                <template x-for="suffix in ['name', 'plural', 'tooltip', 'tooltip_delayed', 'desc', 'effects']" :key="suffix">
+                                    <div x-show="entity.variants[variant][suffix]" class="space-y-1">
+                                        <div class="flex justify-between text-xs text-slate-500 font-mono mb-1">
+                                            <span x-text="entity.variants[variant][suffix]?.key"></span>
+                                            <span x-text="entity.variants[variant][suffix]?.filename"></span>
+                                        </div>
+                                        
+                                        <template x-if="suffix === 'desc' || suffix === 'tooltip' || suffix === 'tooltip_delayed' || suffix === 'effects'">
+                                            <div class="relative">
+                                                <textarea x-model="entity.variants[variant][suffix].text" rows="3" class="w-full bg-slate-900 text-slate-300 border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-emerald-500 font-sans"></textarea>
+                                                <button @click="save(entity.variants[variant][suffix])" class="absolute bottom-3 right-3 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs px-3 py-1 rounded">Save</button>
+                                            </div>
+                                        </template>
+                                        
+                                        <template x-if="suffix !== 'desc' && suffix !== 'tooltip' && suffix !== 'tooltip_delayed' && suffix !== 'effects'">
+                                            <div class="relative flex items-center">
+                                                <span class="absolute left-3 text-slate-500 text-xs font-semibold uppercase w-16" x-text="suffix === 'name' ? 'Title' : suffix"></span>
+                                                <input type="text" x-model="entity.variants[variant][suffix].text" class="w-full bg-slate-900 text-slate-300 border border-slate-700 rounded pl-20 pr-16 py-2 focus:outline-none focus:border-emerald-500 font-sans font-medium text-lg">
+                                                <button @click="save(entity.variants[variant][suffix])" class="absolute right-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs px-3 py-1 rounded">Save</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+        
+        <div x-show="!isSearching && entities.length === 0 && searchQuery !== ''" class="text-center text-slate-500 py-12">
+            No strings found. Try a different search.
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('locEditor', () => ({
+                searchQuery: '',
+                modName: '',
+                entities: [],
+                categories: [],
+                currentCategory: '',
+                isSearching: false,
+                isGenerating: false,
+                successMessage: '',
+                errorMessage: '',
+
+                init() {
+                    this.loadCategories();
+                    window.addEventListener('popstate', (e) => {
+                        this.restoreStateFromUrl();
+                    });
+                    this.restoreStateFromUrl();
+                },
+
+                restoreStateFromUrl() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const q = urlParams.get('q') || '';
+                    const cat = urlParams.get('cat') || '';
+
+                    if (q) {
+                        this.searchQuery = q;
+                        this.search(false);
+                    } else if (cat) {
+                        this.browseCategory(cat, false);
+                    } else {
+                        this.clearCategory(false);
+                        this.searchQuery = '';
+                    }
+                },
+
+                async loadCategories() {
+                    try {
+                        const res = await fetch('/api/categories');
+                        this.categories = await res.json();
+                    } catch (e) {
+                        console.error('Failed to load categories', e);
+                    }
+                },
+
+                async browseCategory(cat, pushState = true) {
+                    this.currentCategory = cat;
+                    this.searchQuery = '';
+                    this.isSearching = true;
+                    if (pushState) {
+                        history.pushState(null, '', `?cat=${encodeURIComponent(cat)}`);
+                    }
+                    try {
+                        const res = await fetch(`/api/search?cat=${encodeURIComponent(cat)}`);
+                        this.entities = await res.json() || [];
+                    } catch (e) {
+                        this.errorMessage = 'Failed to load category';
+                    } finally {
+                        this.isSearching = false;
+                    }
+                },
+                
+                clearCategory(pushState = true) {
+                    this.currentCategory = '';
+                    this.entities = [];
+                    if (pushState) {
+                        history.pushState(null, '', window.location.pathname);
+                    }
+                },
+
+                async search(pushState = true) {
+                    if (this.searchQuery.length < 3 && this.searchQuery.length > 0) return;
+                    this.currentCategory = '';
+                    
+                    if (this.searchQuery.trim() === '') {
+                        this.entities = [];
+                        if (pushState) history.pushState(null, '', window.location.pathname);
+                        return;
+                    }
+                    
+                    this.isSearching = true;
+                    if (pushState) {
+                        history.pushState(null, '', `?q=${encodeURIComponent(this.searchQuery)}`);
+                    }
+                    try {
+                        const res = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
+                        this.entities = await res.json() || [];
+                    } catch (e) {
+                        this.errorMessage = 'Search failed';
+                    } finally {
+                        this.isSearching = false;
+                    }
+                },
+
+                async save(item) {
+                    if (!item) return;
+                    try {
+                        const res = await fetch('/api/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                key: item.key,
+                                text: item.text
+                            })
+                        });
+                        
+                        if (!res.ok) throw new Error('Update failed');
+                        item.modified = true;
+                        
+                        // Show a temporary success style on the save button
+                        const btn = event.target;
+                        const oldText = btn.innerText;
+                        btn.innerText = 'Saved!';
+                        btn.classList.add('bg-emerald-500');
+                        setTimeout(() => {
+                            btn.innerText = oldText;
+                            btn.classList.remove('bg-emerald-500');
+                        }, 2000);
+                        
+                    } catch (e) {
+                        this.errorMessage = 'Failed to save changes';
+                    }
+                },
+
+                async generateMod() {
+                    this.isGenerating = true;
+                    this.successMessage = '';
+                    this.errorMessage = '';
+                    try {
+                        const res = await fetch('/api/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: this.modName })
+                        });
+                        
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Generation failed. Make sure you edited at least one string.');
+                        
+                        this.successMessage = `Mod generated successfully at ${data.path}`;
+                    } catch (e) {
+                        this.errorMessage = e.message;
+                    } finally {
+                        this.isGenerating = false;
+                    }
+                }
+            }))
+        })
+    </script>
+</body>
+</html>
