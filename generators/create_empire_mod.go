@@ -199,9 +199,9 @@ func main() {
 
 					http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 						if r.URL.Path == "/" {
-							http.ServeFile(w, r, "generators/web/empire.html")
+							http.ServeFile(w, r, "generators/web/empire_generator/index.html")
 						} else {
-							http.ServeFile(w, r, filepath.Join("generators/web", filepath.Clean(r.URL.Path)))
+							http.ServeFile(w, r, filepath.Join("generators/web/empire_generator", filepath.Clean(r.URL.Path)))
 						}
 					})
 

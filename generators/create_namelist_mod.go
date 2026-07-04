@@ -116,7 +116,7 @@ func main() {
 						}
 					})
 
-					fs := http.FileServer(http.Dir("generators/web"))
+					fs := http.FileServer(http.Dir("generators/web/namelist_editor"))
 					http.Handle("/", fs)
 
 					listener, err := net.Listen("tcp", "127.0.0.1:0")
