@@ -8,6 +8,7 @@ A collection of automated tools designed to streamline modding Stellaris, specif
 *   **Portrait Gallery Generator (`portrait_gallery_generator`)**: Scans your local Stellaris installation and builds a visual HTML gallery of every single vanilla portrait in the game.
 *   **Namelist Mod Generator (`create_namelist_mod`)**: Compiles TSV spreadsheets of names into valid Stellaris namelists.
 *   **Empire Mod Generator (`create_empire_mod`)**: Provides a beautiful, interactive Web UI to forge custom empires, seamlessly integrating custom portraits and namelists into prescripted empires.
+*   **Localisation Editor (`loc_editor`)**: A blazing fast SQLite FTS5-powered web application for searching and editing Stellaris localisation strings. Features a native Category Browser and groups entity variants (Base, Machine, Hive) natively for an intuitive modding workflow.
 *   **Mod Installer (`install_mods`)**: Safely deploys your generated mods into your local Stellaris `mod` directory so they appear in the Paradox Launcher.
 
 ## Prerequisites
@@ -39,7 +40,7 @@ The empire generator uses a configuration file, `empire.yaml`. The easiest way t
 ./create_empire_mod edit
 ```
 
-This will launch a local dashboard at `http://localhost:44793`. From the UI you can visually pick room backgrounds, design your empire's flag, assign ethics and civics from the live game data, and seamlessly upload custom portrait and namelist files.
+This will launch a local dashboard dynamically on an available localhost port (e.g. `http://127.0.0.1:44793`). From the UI you can visually pick room backgrounds, design your empire's flag, assign ethics and civics from the live game data, and seamlessly upload custom portrait and namelist files.
 
 When you're ready, generate the final empire mod:
 ```bash
