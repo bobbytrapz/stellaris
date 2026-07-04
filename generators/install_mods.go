@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
 	"github.com/bobby/stellaris-mods/pkg/log"
 )
 
@@ -25,10 +27,36 @@ func main() {
 		log.Info("Create mod directory: %s", root)
 	}
 
+	stateFile := filepath.Join("mod", ".managed_mods.json")
+	var managedMods []string
+	if data, err := os.ReadFile(stateFile); err == nil {
+		json.Unmarshal(data, &managedMods)
+	}
+
 	mods, err := listMods()
 	if err != nil {
 		log.Fatal("list_mods: %s", err)
 	}
+
+	currentMods := make(map[string]bool)
+	var newManagedMods []string
+	for _, mod := range mods {
+		currentMods[mod.Name] = true
+		newManagedMods = append(newManagedMods, mod.Name)
+	}
+
+	for _, oldMod := range managedMods {
+		if !currentMods[oldMod] {
+			if verbose {
+				log.Info("Removing old unmanaged mod: %s", oldMod)
+			}
+			os.RemoveAll(filepath.Join(root, oldMod))
+			os.Remove(filepath.Join(root, oldMod+".mod"))
+		}
+	}
+
+	data, _ := json.MarshalIndent(newManagedMods, "", "  ")
+	os.WriteFile(stateFile, data, 0644)
 
 	for _, mod := range mods {
 		existingModDirectory := filepath.Join(root, mod.Name)
